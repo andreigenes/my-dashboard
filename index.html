@@ -6,16 +6,19 @@
     <title>Personal Dashboard</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="/my-dashboard/manifest.json">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #0f0f0f; color: #ffffff; -webkit-tap-highlight-color: transparent; }
         .custom-blur { background: rgba(20, 20, 20, 0.7); backdrop-filter: blur(12px); }
+        .nav-active { color: #ffffff; font-weight: 600; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="font-sans antialiased pb-24">
+<body class="font-sans antialiased pb-28">
 
+    <!-- Auth Screen -->
     <div id="auth-screen" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#0f0f0f] px-6">
         <div class="w-full max-w-md space-y-6 custom-blur p-8 rounded-2xl border border-neutral-800">
             <h1 class="text-3xl font-bold tracking-tight text-center">welcome, king</h1>
@@ -30,6 +33,7 @@
         </div>
     </div>
 
+    <!-- Onboarding Screen -->
     <div id="username-screen" class="fixed inset-0 z-40 flex flex-col items-center justify-center bg-[#0f0f0f] px-6 hidden">
         <div class="w-full max-w-md space-y-4 custom-blur p-8 rounded-2xl border border-neutral-800">
             <h2 class="text-2xl font-bold">set your username</h2>
@@ -38,66 +42,181 @@
         </div>
     </div>
 
-    <div id="app-screen" class="max-w-lg mx-auto px-4 pt-8 space-y-6 hidden">
+    <!-- Main App Container -->
+    <div id="app-screen" class="max-w-lg mx-auto px-4 pt-6 space-y-6 hidden">
+        
+        <!-- Top Header -->
         <div class="flex justify-between items-center">
             <div>
                 <p class="text-neutral-500 text-sm">welcome back,</p>
                 <h1 id="greeting-name" class="text-2xl font-bold tracking-tight">king</h1>
             </div>
-            <button onclick="logout()" class="text-xs text-neutral-500 border border-neutral-800 rounded-lg px-3 py-1.5">logout</button>
+            <div id="current-date" class="text-sm text-neutral-400 font-medium"></div>
         </div>
 
-        <div class="space-y-3">
-            <h2 class="text-lg font-semibold tracking-tight text-neutral-400">apple health sync</h2>
+        <!-- TAB 1: HOME (METRICS & GOALS) -->
+        <div id="tab-home-content" class="tab-content space-y-6">
+            <!-- Mood Tracker -->
+            <div class="bg-neutral-900 p-4 rounded-2xl border border-neutral-800 space-y-3">
+                <p class="text-xs text-neutral-400 font-medium uppercase tracking-wider">how is your mood today?</p>
+                <div class="flex justify-between px-2 text-2xl">
+                    <button onclick="setMood(1)" class="mood-btn opacity-40 hover:opacity-100 transition">😢</button>
+                    <button onclick="setMood(2)" class="mood-btn opacity-40 hover:opacity-100 transition">😕</button>
+                    <button onclick="setMood(3)" class="mood-btn opacity-40 hover:opacity-100 transition">😐</button>
+                    <button onclick="setMood(4)" class="mood-btn opacity-40 hover:opacity-100 transition">🙂</button>
+                    <button onclick="setMood(5)" class="mood-btn opacity-40 hover:opacity-100 transition">⚡</button>
+                </div>
+            </div>
+
+            <!-- Health Sync Grid -->
             <div class="grid grid-cols-2 gap-3">
                 <div class="bg-neutral-900 p-4 rounded-2xl border border-neutral-800">
                     <p class="text-xs text-neutral-500">steps</p>
-                    <p id="metric-steps" class="text-2xl font-bold mt-1">0</p>
-                    <div class="w-full bg-neutral-800 h-1.5 rounded-full mt-2 overflow-hidden">
-                        <div id="progress-steps" class="bg-white h-full transition-all duration-500" style="width: 0%"></div>
+                    <p id="home-steps" class="text-2xl font-bold mt-1">0</p>
+                    <div class="w-full bg-neutral-800 h-1 rounded-full mt-2 overflow-hidden">
+                        <div id="bar-steps" class="bg-white h-full transition-all" style="width: 0%"></div>
                     </div>
                 </div>
                 <div class="bg-neutral-900 p-4 rounded-2xl border border-neutral-800">
-                    <p class="text-xs text-neutral-500">calories burnt</p>
-                    <p id="metric-calories" class="text-2xl font-bold mt-1">0 kcal</p>
+                    <p class="text-xs text-neutral-500">calories</p>
+                    <p id="home-calories" class="text-2xl font-bold mt-1">0 kcal</p>
                 </div>
                 <div class="bg-neutral-900 p-4 rounded-2xl border border-neutral-800">
                     <p class="text-xs text-neutral-500">sleep</p>
-                    <p id="metric-sleep" class="text-2xl font-bold mt-1">0h</p>
+                    <p id="home-sleep" class="text-2xl font-bold mt-1">0h</p>
                 </div>
                 <div class="bg-neutral-900 p-4 rounded-2xl border border-neutral-800">
-                    <p class="text-xs text-neutral-500">weight</p>
-                    <p id="metric-weight" class="text-2xl font-bold mt-1">-- kg</p>
+                    <p class="text-xs text-neutral-500">water intake</p>
+                    <div class="flex items-center justify-between mt-1">
+                        <p id="home-water" class="text-2xl font-bold">0L</p>
+                        <button onclick="addWater()" class="bg-neutral-800 text-white rounded-lg px-2 py-1 text-xs font-semibold">+250ml</button>
+                    </div>
                 </div>
             </div>
-            <div class="bg-neutral-900 p-4 rounded-2xl border border-neutral-800 flex justify-between items-center">
-                <span class="text-xs text-neutral-500">resting heart rate</span>
-                <span id="metric-hr" class="text-lg font-bold">-- bpm</span>
+
+            <!-- Extra Health Metrics -->
+            <div class="bg-neutral-900 p-4 rounded-2xl border border-neutral-800 space-y-3">
+                <h3 class="text-sm font-semibold text-neutral-400">biometrics</h3>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div class="bg-neutral-950 p-2 rounded-xl border border-neutral-800">
+                        <p class="text-[10px] text-neutral-500">resting hr</p>
+                        <p id="bio-hr" class="text-sm font-bold mt-0.5">-- bpm</p>
+                    </div>
+                    <div class="bg-neutral-950 p-2 rounded-xl border border-neutral-800">
+                        <p class="text-[10px] text-neutral-500">hrv</p>
+                        <p id="bio-hrv" class="text-sm font-bold mt-0.5">-- ms</p>
+                    </div>
+                    <div class="bg-neutral-950 p-2 rounded-xl border border-neutral-800">
+                        <p class="text-[10px] text-neutral-500">weight</p>
+                        <p id="bio-weight" class="text-sm font-bold mt-0.5">-- kg</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Goals List -->
+            <div class="bg-neutral-900 p-4 rounded-2xl border border-neutral-800 space-y-3">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-sm font-semibold text-neutral-400">active goals</h3>
+                    <button onclick="showAddGoalModal()" class="text-xs text-neutral-400 hover:text-white">+ add goal</button>
+                </div>
+                <div id="goals-container" class="space-y-3"></div>
             </div>
         </div>
 
-        <div class="bg-neutral-900 p-5 rounded-2xl border border-neutral-800 space-y-4">
-            <h2 class="text-lg font-semibold tracking-tight">tasks</h2>
-            <div class="flex gap-2">
-                <input id="todo-input" type="text" placeholder="add a new task..." class="flex-1 bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none">
-                <button onclick="addTodo()" class="bg-white text-black px-4 rounded-xl text-sm font-semibold">add</button>
+        <!-- TAB 2: WORKOUT LOG -->
+        <div id="tab-workout-content" class="tab-content space-y-4 hidden">
+            <div class="bg-neutral-900 p-4 rounded-2xl border border-neutral-800 space-y-4">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-lg font-bold">log workout</h2>
+                    <input id="workout-name" type="text" placeholder="e.g., push day" class="bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-1.5 text-sm focus:outline-none">
+                </div>
+                
+                <div id="exercise-inputs" class="space-y-3 border-t border-neutral-800 pt-3">
+                    <div class="grid grid-cols-4 gap-2">
+                        <input type="text" placeholder="exercise" class="col-span-2 bg-neutral-950 border border-neutral-800 rounded-lg p-2 text-xs text-white focus:outline-none" id="ex-name">
+                        <input type="number" placeholder="sets" class="bg-neutral-950 border border-neutral-800 rounded-lg p-2 text-xs text-white focus:outline-none" id="ex-sets">
+                        <input type="number" placeholder="reps" class="bg-neutral-950 border border-neutral-800 rounded-lg p-2 text-xs text-white focus:outline-none" id="ex-reps">
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="number" placeholder="weight (kg)" class="flex-1 bg-neutral-950 border border-neutral-800 rounded-lg p-2 text-xs text-white focus:outline-none" id="ex-weight">
+                        <button onclick="addExerciseToTempList()" class="bg-white text-black px-4 rounded-lg text-xs font-bold">add ex</button>
+                    </div>
+                </div>
+
+                <div id="temp-exercise-list" class="space-y-1 text-xs text-neutral-400"></div>
+                <button onclick="saveFullWorkout()" class="w-full bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-white font-semibold py-2.5 rounded-xl text-sm transition">save workout session</button>
             </div>
-            <ul id="todo-list" class="space-y-2 max-h-52 overflow-y-auto"></ul>
+
+            <div class="bg-neutral-900 p-4 rounded-2xl border border-neutral-800 space-y-3">
+                <h3 class="text-sm font-semibold text-neutral-400">history</h3>
+                <div id="workout-history" class="space-y-3 max-h-64 overflow-y-auto hide-scrollbar"></div>
+            </div>
+        </div>
+
+        <!-- TAB 3: HABITS TRACKER -->
+        <div id="tab-habits-content" class="tab-content space-y-4 hidden">
+            <div class="bg-neutral-900 p-4 rounded-2xl border border-neutral-800 space-y-4">
+                <div class="flex gap-2">
+                    <input id="habit-name-input" type="text" placeholder="new habit name..." class="flex-1 bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none">
+                    <button onclick="createHabit()" class="bg-white text-black px-4 rounded-xl text-sm font-semibold">create</button>
+                </div>
+                <div id="habits-list-container" class="space-y-4"></div>
+            </div>
+        </div>
+
+        <!-- TAB 4: TASKS (TO-DO) -->
+        <div id="tab-tasks-content" class="tab-content space-y-4 hidden">
+            <div class="bg-neutral-900 p-4 rounded-2xl border border-neutral-800 space-y-4">
+                <h2 class="text-lg font-bold tracking-tight">tasks list</h2>
+                <div class="flex gap-2">
+                    <input id="todo-input" type="text" placeholder="add a task..." class="flex-1 bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none">
+                    <button onclick="addTodo()" class="bg-white text-black px-4 rounded-xl text-sm font-semibold">add</button>
+                </div>
+                <ul id="todo-list" class="space-y-2 max-h-96 overflow-y-auto hide-scrollbar"></ul>
+            </div>
+        </div>
+
+        <!-- TAB 5: PROFILE -->
+        <div id="tab-profile-content" class="tab-content space-y-4 hidden">
+            <div class="bg-neutral-900 p-5 rounded-2xl border border-neutral-800 text-center space-y-4">
+                <div class="w-16 h-16 bg-neutral-800 border border-neutral-700 rounded-full mx-auto flex items-center justify-center text-xl font-bold">👑</div>
+                <div>
+                    <h2 id="profile-username-display" class="text-xl font-bold">king</h2>
+                    <p id="profile-email-display" class="text-xs text-neutral-500 mt-0.5"></p>
+                </div>
+                <button onclick="logout()" class="w-full bg-red-950/40 hover:bg-red-950/60 text-red-400 border border-red-900/50 rounded-xl py-2.5 text-sm font-medium transition">sign out</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <div class="fixed bottom-0 left-0 right-0 border-t border-neutral-900 custom-blur z-30">
+        <div class="max-w-lg mx-auto flex justify-between items-center px-6 py-4 text-xs text-neutral-500">
+            <button onclick="switchTab('home')" id="nav-home" class="flex flex-col items-center gap-1 nav-active"><span>🏠</span><span>home</span></button>
+            <button onclick="switchTab('workout')" id="nav-workout" class="flex flex-col items-center gap-1"><span>💪</span><span>workout</span></button>
+            <button onclick="switchTab('habits')" id="nav-habits" class="flex flex-col items-center gap-1"><span>📅</span><span>habits</span></button>
+            <button onclick="switchTab('tasks')" id="nav-tasks" class="flex flex-col items-center gap-1"><span>⚡</span><span>tasks</span></button>
+            <button onclick="switchTab('profile')" id="nav-profile" class="flex flex-col items-center gap-1"><span>👤</span><span>profile</span></button>
         </div>
     </div>
 
+    <!-- Script Application Logic -->
     <script>
         const SUPABASE_URL = "https://ylblkpjcihyhhdwvgigp.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_ghk4UE0_C2yn4TQFYwIvmg_O-s3Ou13";
         const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let currentUser = null;
+        let temporaryExercises = [];
 
-        // Auth management
+        document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
         supabase.auth.onAuthStateChange((event, session) => {
             if (session) {
                 currentUser = session.user;
                 document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('profile-email-display').innerText = currentUser.email;
                 checkProfile();
             } else {
                 currentUser = null;
@@ -125,68 +244,216 @@
         }
 
         async function checkProfile() {
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('username')
-                .eq('id', currentUser.id)
-                .single();
-
+            const { data, error } = await supabase.from('profiles').select('username').eq('id', currentUser.id).maybeSingle();
             if (error || !data) {
                 document.getElementById('username-screen').classList.remove('hidden');
             } else {
                 document.getElementById('username-screen').classList.add('hidden');
                 document.getElementById('greeting-name').innerText = data.username;
+                document.getElementById('profile-username-display').innerText = data.username;
                 document.getElementById('app-screen').classList.remove('hidden');
-                loadDashboardData();
+                loadAllData();
             }
         }
 
         async function saveUsername() {
             const username = document.getElementById('username-input').value.trim();
             if (!username) return;
-
-            const { error } = await supabase
-                .from('profiles')
-                .insert({ id: currentUser.id, username: username });
-
+            const { error } = await supabase.from('profiles').insert({ id: currentUser.id, username: username });
             if (!error) checkProfile();
         }
 
-        // Load metrics and todos
-        async function loadDashboardData() {
-            const today = new Date().toISOString().split('T')[0];
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.fixed bottom-0 button').forEach(el => el.classList.remove('nav-active'));
             
-            // Fetch metrics
-            const { data: metrics } = await supabase
-                .from('health_metrics')
-                .select('*')
-                .eq('user_id', currentUser.id)
-                .eq('date', today)
-                .maybeSingle();
+            document.getElementById(`tab-${tabId}-content`).classList.remove('hidden');
+            
+            const navIds = ['home', 'workout', 'habits', 'tasks', 'profile'];
+            navIds.forEach(id => {
+                const el = document.getElementById(`nav-${id}`);
+                if (id === tabId) el.classList.add('nav-active');
+                else el.classList.remove('nav-active');
+            });
+        }
 
-            if (metrics) {
-                document.getElementById('metric-steps').innerText = (metrics.steps || 0).toLocaleString();
-                document.getElementById('metric-calories').innerText = `${metrics.calories || 0} kcal`;
-                document.getElementById('metric-sleep').innerText = `${metrics.sleep_hours || 0}h`;
-                document.getElementById('metric-weight').innerText = metrics.weight ? `${metrics.weight} kg` : '-- kg';
-                document.getElementById('metric-hr').innerText = metrics.resting_hr ? `${metrics.resting_hr} bpm` : '-- bpm';
+        function loadAllData() {
+            loadMetrics();
+            loadGoals();
+            loadWorkouts();
+            loadHabits();
+            loadTodos();
+        }
 
-                // Progress bar steps (target 10,000 steps)
-                const stepPercent = Math.min(((metrics.steps || 0) / 10000) * 100, 100);
-                document.getElementById('progress-steps').style.width = `${stepPercent}%`;
+        async function loadMetrics() {
+            const today = new Date().toISOString().split('T')[0];
+            const { data } = await supabase.from('health_metrics').select('*').eq('user_id', currentUser.id).eq('date', today).maybeSingle();
+            
+            if (data) {
+                document.getElementById('home-steps').innerText = (data.steps || 0).toLocaleString();
+                document.getElementById('home-calories').innerText = `${data.calories || 0} kcal`;
+                document.getElementById('home-sleep').innerText = `${data.sleep_hours || 0}h`;
+                document.getElementById('home-water').innerText = `${data.water_liters || 0}L`;
+                document.getElementById('bio-hr').innerText = data.resting_hr ? `${data.resting_hr} bpm` : '-- bpm';
+                document.getElementById('bio-hrv').innerText = data.hrv ? `${data.hrv} ms` : '-- ms';
+                document.getElementById('bio-weight').innerText = data.weight ? `${data.weight} kg` : '-- kg';
+
+                const stepPercent = Math.min(((data.steps || 0) / 10000) * 100, 100);
+                document.getElementById('bar-steps').style.width = `${stepPercent}%`;
+
+                if (data.mood) {
+                    document.querySelectorAll('.mood-btn').forEach((btn, idx) => {
+                        if (idx + 1 === data.mood) btn.style.opacity = '1';
+                        else btn.style.opacity = '0.4';
+                    });
+                }
             }
+        }
 
-            // Fetch Todos
-            const { data: todos } = await supabase
-                .from('todos')
-                .select('*')
-                .eq('user_id', currentUser.id)
-                .order('created_at', { ascending: true });
+        async function setMood(val) {
+            const today = new Date().toISOString().split('T')[0];
+            await supabase.from('health_metrics').upsert({ user_id: currentUser.id, date: today, mood: val }, { onConflict: 'user_id,date' });
+            loadMetrics();
+        }
 
+        async function addWater() {
+            const today = new Date().toISOString().split('T')[0];
+            const { data } = await supabase.from('health_metrics').select('water_liters').eq('user_id', currentUser.id).eq('date', today).maybeSingle();
+            const currentWater = data ? (data.water_liters || 0) : 0;
+            await supabase.from('health_metrics').upsert({ user_id: currentUser.id, date: today, water_liters: currentWater + 0.25 }, { onConflict: 'user_id,date' });
+            loadMetrics();
+        }
+
+        async function loadGoals() {
+            const { data } = await supabase.from('goals').select('*').eq('user_id', currentUser.id);
+            const container = document.getElementById('goals-container');
+            container.innerHTML = '';
+            if (data) {
+                data.forEach(g => {
+                    const pct = Math.min((g.current_value / g.target_value) * 100, 100);
+                    container.innerHTML += `
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span>${g.name}</span>
+                                <span class="text-neutral-400">${g.current_value}/${g.target_value} ${g.unit || ''}</span>
+                            </div>
+                            <div class="w-full bg-neutral-950 h-1.5 rounded-full overflow-hidden border border-neutral-800">
+                                <div class="bg-white h-full" style="width: ${pct}%"></div>
+                            </div>
+                        </div>`;
+                });
+            }
+        }
+
+        function showAddGoalModal() {
+            const name = prompt("goal name:");
+            const target = prompt("target value:");
+            const unit = prompt("unit (e.g. kg, reps):");
+            if (name && target) {
+                supabase.from('goals').insert({ user_id: currentUser.id, name, target_value: parseFloat(target), unit, current_value: 0 }).then(() => loadGoals());
+            }
+        }
+
+        function addExerciseToTempList() {
+            const name = document.getElementById('ex-name').value;
+            const sets = document.getElementById('ex-sets').value;
+            const reps = document.getElementById('ex-reps').value;
+            const weight = document.getElementById('ex-weight').value;
+
+            if (!name) return;
+            temporaryExercises.push({ name, sets: parseInt(sets), reps: parseInt(reps), weight: parseFloat(weight) });
+            
+            document.getElementById('temp-exercise-list').innerHTML = temporaryExercises.map(e => `<div>• ${e.name} - ${e.sets}x${e.reps} @ ${e.weight || 0}kg</div>`).join('');
+            document.getElementById('ex-name').value = '';
+            document.getElementById('ex-sets').value = '';
+            document.getElementById('ex-reps').value = '';
+            document.getElementById('ex-weight').value = '';
+        }
+
+        async function saveFullWorkout() {
+            const wName = document.getElementById('workout-name').value || "workout session";
+            if (temporaryExercises.length === 0) return;
+
+            const today = new Date().toISOString().split('T')[0];
+            const { data: wData } = await supabase.from('workouts').insert({ user_id: currentUser.id, name: wName, date: today }).select().single();
+
+            if (wData) {
+                const prepared = temporaryExercises.map(e => ({ workout_id: wData.id, name: e.name, sets: e.sets, reps: e.reps, weight: e.weight }));
+                await supabase.from('workout_exercises').insert(prepared);
+                temporaryExercises = [];
+                document.getElementById('temp-exercise-list').innerHTML = '';
+                document.getElementById('workout-name').value = '';
+                loadWorkouts();
+            }
+        }
+
+        async function loadWorkouts() {
+            const { data: wData } = await supabase.from('workouts').select('*, workout_exercises(*)').eq('user_id', currentUser.id).order('date', { ascending: false });
+            const container = document.getElementById('workout-history');
+            container.innerHTML = '';
+            if (wData) {
+                wData.forEach(w => {
+                    const exHtml = w.workout_exercises.map(e => `<div class="text-xs text-neutral-400">${e.name} : ${e.sets || 0}x${e.reps || 0} (${e.weight || 0} kg)</div>`).join('');
+                    container.innerHTML += `
+                        <div class="bg-neutral-950 p-3 rounded-xl border border-neutral-800 space-y-1">
+                            <div class="flex justify-between items-center text-xs font-semibold">
+                                <span>${w.name}</span>
+                                <span class="text-neutral-500">${w.date}</span>
+                            </div>
+                            <div class="space-y-0.5 border-t border-neutral-900 pt-1 mt-1">${exHtml}</div>
+                        </div>`;
+                });
+            }
+        }
+
+        async function createHabit() {
+            const input = document.getElementById('habit-name-input');
+            const name = input.value.trim();
+            if (!name) return;
+            await supabase.from('habits').insert({ user_id: currentUser.id, name });
+            input.value = '';
+            loadHabits();
+        }
+
+        async function loadHabits() {
+            const { data: habits } = await supabase.from('habits').select('*, habit_logs(*)').eq('user_id', currentUser.id);
+            const container = document.getElementById('habits-list-container');
+            container.innerHTML = '';
+            
+            if (habits) {
+                const todayStr = new Date().toISOString().split('T')[0];
+                habits.forEach(h => {
+                    const isDoneToday = h.habit_logs.some(l => l.date === todayStr && l.done);
+                    container.innerHTML += `
+                        <div class="bg-neutral-950 p-3 rounded-xl border border-neutral-800 flex justify-between items-center">
+                            <div>
+                                <p class="text-sm font-semibold">${h.name}</p>
+                                <p class="text-[10px] text-neutral-500">streak sync active</p>
+                            </div>
+                            <button onclick="toggleHabitLog('${h.id}', ${isDoneToday})" class="px-4 py-1.5 rounded-lg text-xs font-bold ${isDoneToday ? 'bg-neutral-800 text-neutral-400' : 'bg-white text-black'}">
+                                ${isDoneToday ? 'completed' : 'mark done'}
+                            </button>
+                        </div>`;
+                });
+            }
+        }
+
+        async function toggleHabitLog(habitId, isDone) {
+            const today = new Date().toISOString().split('T')[0];
+            if (isDone) {
+                await supabase.from('habit_logs').delete().eq('habit_id', habitId).eq('date', today);
+            } else {
+                await supabase.from('habit_logs').insert({ habit_id: habitId, user_id: currentUser.id, date: today, done: true });
+            }
+            loadHabits();
+        }
+
+        async function loadTodos() {
+            const { data } = await supabase.from('todos').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: true });
             const listEl = document.getElementById('todo-list');
             listEl.innerHTML = '';
-            if (todos) {
-                todos.forEach(todo => {
+            if (data) {
+                data.forEach(todo => {
                     const li = document.createElement('li');
                     li.className = "flex items-center justify-between bg-neutral-950 px-4 py-3 rounded-xl border border-neutral-800 text-sm";
                     li.innerHTML = `
@@ -205,20 +472,19 @@
             const input = document.getElementById('todo-input');
             const text = input.value.trim();
             if (!text) return;
-
-            await supabase.from('todos').insert({ user_id: currentUser.id, text: text });
+            await supabase.from('todos').insert({ user_id: currentUser.id, text });
             input.value = '';
-            loadDashboardData();
+            loadTodos();
         }
 
-        async function toggleTodo(id, currentStatus) {
-            await supabase.from('todos').update({ done: !currentStatus }).eq('id', id);
-            loadDashboardData();
+        async function toggleTodo(id, done) {
+            await supabase.from('todos').update({ done: !done }).eq('id', id);
+            loadTodos();
         }
 
         async function deleteTodo(id) {
             await supabase.from('todos').delete().eq('id', id);
-            loadDashboardData();
+            loadTodos();
         }
 
         async function logout() {
