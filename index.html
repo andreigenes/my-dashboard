@@ -1,495 +1,955 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Personal Dashboard</title>
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { background-color: #0f0f0f; color: #ffffff; -webkit-tap-highlight-color: transparent; }
-        .custom-blur { background: rgba(20, 20, 20, 0.7); backdrop-filter: blur(12px); }
-        .nav-active { color: #ffffff; font-weight: 600; }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dashboard">
+<meta name="theme-color" content="#0f0f0f">
+<title>Personal Dashboard</title>
+<link rel="manifest" href="/my-dashboard/manifest.json">
+<base href="/my-dashboard/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --bg: #0f0f0f;
+  --bg2: #161616;
+  --bg3: #1e1e1e;
+  --bg4: #252525;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.14);
+  --text: #f0f0f0;
+  --text2: #888;
+  --text3: #555;
+  --accent: #7fff6e;
+  --accent2: #5dd64d;
+  --blue: #60a5fa;
+  --amber: #fbbf24;
+  --red: #f87171;
+  --purple: #a78bfa;
+  --pink: #f472b6;
+  --teal: #2dd4bf;
+  --radius: 14px;
+  --radius-sm: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px; line-height: 1.5; }
+body { overflow-x: hidden; }
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+
+/* AUTH */
+#auth-screen {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 100vh; padding: 2rem;
+}
+.auth-logo { font-size: 40px; margin-bottom: 1rem; }
+.auth-title { font-size: 24px; font-weight: 600; margin-bottom: 0.25rem; }
+.auth-sub { color: var(--text2); font-size: 14px; margin-bottom: 2rem; }
+.auth-box { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; width: 100%; max-width: 360px; }
+.auth-tabs { display: flex; gap: 4px; background: var(--bg3); border-radius: var(--radius-sm); padding: 4px; margin-bottom: 1.25rem; }
+.auth-tab { flex: 1; text-align: center; padding: 8px; border-radius: 6px; font-size: 14px; cursor: pointer; color: var(--text2); transition: all 0.2s; }
+.auth-tab.active { background: var(--bg4); color: var(--text); font-weight: 500; }
+.field { margin-bottom: 1rem; }
+.field label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+.field input { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; color: var(--text); font-family: inherit; font-size: 15px; outline: none; transition: border 0.2s; }
+.field input:focus { border-color: var(--accent); }
+.btn-primary { width: 100%; background: var(--accent); color: #0f0f0f; border: none; border-radius: var(--radius-sm); padding: 12px; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+.btn-primary:active { opacity: 0.8; }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.auth-error { color: var(--red); font-size: 13px; margin-top: 0.75rem; text-align: center; }
+
+/* ONBOARDING */
+#onboard-screen {
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 100vh; padding: 2rem;
+}
+.onboard-box { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; width: 100%; max-width: 360px; }
+.onboard-title { font-size: 18px; font-weight: 600; margin-bottom: 0.25rem; }
+.onboard-sub { color: var(--text2); font-size: 13px; margin-bottom: 1.25rem; }
+
+/* APP */
+#app { display: none; padding-bottom: 80px; }
+
+/* NAV */
+.nav-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(15,15,15,0.95); backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  display: flex; padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+}
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 4px 0; color: var(--text3); transition: color 0.2s; }
+.nav-item.active { color: var(--accent); }
+.nav-item svg { width: 22px; height: 22px; }
+.nav-item span { font-size: 10px; font-weight: 500; }
+
+/* HEADER */
+.page-header { padding: 1.25rem 1rem 0.5rem; }
+.greeting { font-size: 22px; font-weight: 600; }
+.greeting-sub { color: var(--text2); font-size: 13px; margin-top: 2px; }
+
+/* PAGES */
+.page { display: none; padding: 0 1rem; }
+.page.active { display: block; }
+
+/* CARDS */
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; margin-bottom: 10px; }
+.card-title { font-size: 12px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.75rem; }
+.card-big { font-size: 28px; font-weight: 600; }
+.card-unit { font-size: 13px; color: var(--text2); font-weight: 400; margin-left: 2px; }
+
+/* METRICS GRID */
+.metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.metric-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; }
+.metric-label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+.metric-value { font-size: 26px; font-weight: 600; }
+.metric-sub { font-size: 12px; color: var(--text2); margin-top: 4px; }
+
+/* PROGRESS */
+.progress-bg { background: var(--bg4); border-radius: 100px; height: 5px; margin: 8px 0 4px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 100px; transition: width 0.5s ease; }
+
+/* BADGE */
+.badge { display: inline-block; font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 100px; }
+
+/* ROW ITEMS */
+.row-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.row-item:last-child { border-bottom: none; }
+.row-left { font-size: 14px; }
+.row-right { font-size: 13px; color: var(--text2); }
+
+/* TODO */
+.todo-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+.todo-item:last-child { border-bottom: none; }
+.todo-check { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--border2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
+.todo-check.done { background: var(--accent); border-color: var(--accent); }
+.todo-check.done svg { display: block; }
+.todo-check svg { display: none; width: 12px; height: 12px; }
+.todo-text { font-size: 14px; flex: 1; }
+.todo-text.done { text-decoration: line-through; color: var(--text3); }
+.todo-delete { color: var(--text3); padding: 4px; cursor: pointer; }
+
+/* HABIT GRID */
+.habit-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.habit-row:last-child { margin-bottom: 0; }
+.habit-name { font-size: 13px; color: var(--text2); width: 90px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.habit-dots { display: flex; gap: 3px; flex: 1; }
+.habit-dot { width: 100%; aspect-ratio: 1; border-radius: 3px; background: var(--bg4); cursor: pointer; transition: background 0.15s; max-width: 22px; }
+.habit-dot.done { background: var(--accent); }
+.habit-delete { color: var(--text3); font-size: 16px; cursor: pointer; padding: 2px 4px; }
+
+/* GOAL */
+.goal-item { margin-bottom: 14px; }
+.goal-item:last-child { margin-bottom: 0; }
+.goal-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.goal-name { font-size: 14px; }
+.goal-pct { font-size: 12px; color: var(--text2); }
+.goal-vals { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+/* WORKOUT */
+.exercise-item { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border); }
+.exercise-item:last-child { border-bottom: none; }
+.exercise-name { font-size: 14px; }
+.exercise-detail { font-size: 12px; color: var(--text2); font-family: 'DM Mono', monospace; }
+
+/* SLEEP CHART */
+.sleep-chart { display: flex; align-items: flex-end; gap: 4px; height: 60px; margin-top: 10px; }
+.sleep-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; }
+.sleep-bar { width: 100%; border-radius: 4px 4px 0 0; background: var(--blue); opacity: 0.7; transition: height 0.4s; min-height: 4px; }
+.sleep-day { font-size: 10px; color: var(--text3); }
+
+/* MOOD */
+.mood-row { display: flex; gap: 6px; }
+.mood-btn { flex: 1; padding: 10px 4px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 20px; cursor: pointer; background: var(--bg3); text-align: center; transition: all 0.15s; }
+.mood-btn.selected { background: var(--bg4); border-color: var(--border2); transform: scale(1.1); }
+
+/* INPUTS */
+.add-row { display: flex; gap: 8px; margin-top: 10px; }
+.add-input { flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 9px 12px; color: var(--text); font-family: inherit; font-size: 14px; outline: none; }
+.add-input:focus { border-color: var(--accent); }
+.add-btn { background: var(--accent); color: #0f0f0f; border: none; border-radius: var(--radius-sm); padding: 9px 14px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.add-btn:active { opacity: 0.8; }
+
+/* SECTION TITLE */
+.section-title { font-size: 16px; font-weight: 600; margin: 1.25rem 0 0.75rem; }
+
+/* HEALTH LOG */
+.log-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.log-field label { display: block; font-size: 11px; color: var(--text2); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+.log-field input { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 10px; color: var(--text); font-family: inherit; font-size: 15px; outline: none; }
+.log-field input:focus { border-color: var(--accent); }
+.log-field.full { grid-column: 1 / -1; }
+
+/* MODAL */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; display: none; align-items: flex-end; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius) var(--radius) 0 0; padding: 1.25rem; width: 100%; max-width: 500px; }
+.modal-title { font-size: 16px; font-weight: 600; margin-bottom: 1rem; }
+.modal-actions { display: flex; gap: 8px; margin-top: 1rem; }
+.btn-cancel { flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 11px; font-family: inherit; font-size: 14px; color: var(--text2); cursor: pointer; }
+.btn-save { flex: 2; background: var(--accent); border: none; border-radius: var(--radius-sm); padding: 11px; font-family: inherit; font-size: 14px; font-weight: 600; color: #0f0f0f; cursor: pointer; }
+
+/* TOAST */
+.toast { position: fixed; top: 1rem; left: 50%; transform: translateX(-50%) translateY(-80px); background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 10px 16px; font-size: 14px; z-index: 300; transition: transform 0.3s ease; white-space: nowrap; }
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* PROFILE */
+.profile-avatar { width: 64px; height: 64px; border-radius: 50%; background: var(--bg3); border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 600; color: var(--accent); margin: 0 auto 0.75rem; }
+.profile-name { text-align: center; font-size: 20px; font-weight: 600; }
+.profile-email { text-align: center; font-size: 13px; color: var(--text2); margin-top: 2px; margin-bottom: 1.5rem; }
+.btn-danger { width: 100%; background: transparent; border: 1px solid var(--red); border-radius: var(--radius-sm); padding: 11px; font-family: inherit; font-size: 14px; color: var(--red); cursor: pointer; margin-top: 8px; }
+
+/* LOADING */
+#loading { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 400; }
+.spinner { width: 32px; height: 32px; border: 2px solid var(--bg3); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (min-width: 600px) {
+  .metrics-grid { grid-template-columns: repeat(4, 1fr); }
+  #app { max-width: 640px; margin: 0 auto; }
+  .nav-bar { left: 50%; transform: translateX(-50%); width: 640px; border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
+}
+</style>
 </head>
-<body class="font-sans antialiased pb-28">
+<body>
 
-    <!-- Auth Screen -->
-    <div id="auth-screen" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#0f0f0f] px-6">
-        <div class="w-full max-w-md space-y-6 custom-blur p-8 rounded-2xl border border-neutral-800">
-            <h1 class="text-3xl font-bold tracking-tight text-center">welcome, king</h1>
-            <p class="text-sm text-neutral-400 text-center">sign in to sync your personal dashboard</p>
-            <div class="space-y-4">
-                <input id="auth-email" type="email" placeholder="email" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-neutral-600">
-                <input id="auth-password" type="password" placeholder="password" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-neutral-600">
-                <button onclick="handleAuth('signin')" class="w-full bg-white text-black font-semibold rounded-xl py-3 hover:bg-neutral-200 transition">sign in</button>
-                <button onclick="handleAuth('signup')" class="w-full bg-neutral-900 text-neutral-400 border border-neutral-800 rounded-xl py-3 hover:text-white transition text-sm">create account</button>
-            </div>
-            <p id="auth-error" class="text-red-500 text-sm text-center hidden"></p>
-        </div>
+<div id="loading"><div class="spinner"></div></div>
+
+<!-- AUTH -->
+<div id="auth-screen" style="display:none">
+  <div class="auth-logo">⚡</div>
+  <div class="auth-title">Personal Dashboard</div>
+  <div class="auth-sub">Track everything. Every day.</div>
+  <div class="auth-box">
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchTab('login')">Login</div>
+      <div class="auth-tab" onclick="switchTab('signup')">Sign up</div>
+    </div>
+    <div id="login-form">
+      <div class="field"><label>Email</label><input type="email" id="login-email" placeholder="you@email.com"></div>
+      <div class="field"><label>Password</label><input type="password" id="login-pass" placeholder="••••••••"></div>
+      <button class="btn-primary" onclick="login()">Login</button>
+    </div>
+    <div id="signup-form" style="display:none">
+      <div class="field"><label>Email</label><input type="email" id="signup-email" placeholder="you@email.com"></div>
+      <div class="field"><label>Password</label><input type="password" id="signup-pass" placeholder="min. 6 chars"></div>
+      <button class="btn-primary" onclick="signup()">Create account</button>
+    </div>
+    <div class="auth-error" id="auth-error"></div>
+  </div>
+</div>
+
+<!-- ONBOARDING -->
+<div id="onboard-screen" style="display:none">
+  <div class="onboard-box">
+    <div class="auth-logo" style="text-align:center">👋</div>
+    <div class="onboard-title">Welcome! What's your name?</div>
+    <div class="onboard-sub">This is how the dashboard will greet you.</div>
+    <div class="field"><label>Username</label><input type="text" id="onboard-username" placeholder="e.g. Alex" maxlength="24"></div>
+    <button class="btn-primary" onclick="saveUsername()">Let's go →</button>
+    <div class="auth-error" id="onboard-error"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+  <div class="page-header">
+    <div class="greeting" id="greeting">Hey 👋</div>
+    <div class="greeting-sub" id="greeting-sub"></div>
+  </div>
+
+  <!-- HOME PAGE -->
+  <div class="page active" id="page-home">
+    <div class="metrics-grid" id="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Steps</div>
+        <div class="metric-value" id="m-steps">—</div>
+        <div class="progress-bg"><div class="progress-fill" id="p-steps" style="background:var(--accent);width:0%"></div></div>
+        <div class="metric-sub" id="s-steps">Goal: 10,000</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Sleep</div>
+        <div class="metric-value" id="m-sleep">—<span class="card-unit">h</span></div>
+        <div class="metric-sub" id="s-sleep">Log today's sleep</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Calories</div>
+        <div class="metric-value" id="m-cal">—</div>
+        <div class="progress-bg"><div class="progress-fill" id="p-cal" style="background:var(--amber);width:0%"></div></div>
+        <div class="metric-sub" id="s-cal">Goal: 2,500</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Water</div>
+        <div class="metric-value" id="m-water">—<span class="card-unit">L</span></div>
+        <div class="progress-bg"><div class="progress-fill" id="p-water" style="background:var(--blue);width:0%"></div></div>
+        <div class="metric-sub" id="s-water">Goal: 3L</div>
+      </div>
     </div>
 
-    <!-- Onboarding Screen -->
-    <div id="username-screen" class="fixed inset-0 z-40 flex flex-col items-center justify-center bg-[#0f0f0f] px-6 hidden">
-        <div class="w-full max-w-md space-y-4 custom-blur p-8 rounded-2xl border border-neutral-800">
-            <h2 class="text-2xl font-bold">set your username</h2>
-            <input id="username-input" type="text" placeholder="username" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-3 text-white focus:outline-none">
-            <button onclick="saveUsername()" class="w-full bg-white text-black font-semibold rounded-xl py-3">continue</button>
-        </div>
+    <!-- LOG BUTTON -->
+    <button class="btn-primary" style="margin-bottom:10px" onclick="openLogModal()">+ Log today's metrics</button>
+
+    <!-- MOOD -->
+    <div class="card">
+      <div class="card-title">Mood today</div>
+      <div class="mood-row" id="mood-row">
+        <div class="mood-btn" onclick="setMood(1)">😴</div>
+        <div class="mood-btn" onclick="setMood(2)">😔</div>
+        <div class="mood-btn" onclick="setMood(3)">😐</div>
+        <div class="mood-btn" onclick="setMood(4)">🙂</div>
+        <div class="mood-btn" onclick="setMood(5)">😄</div>
+      </div>
     </div>
 
-    <!-- Main App Container -->
-    <div id="app-screen" class="max-w-lg mx-auto px-4 pt-6 space-y-6 hidden">
-        
-        <!-- Top Header -->
-        <div class="flex justify-between items-center">
-            <div>
-                <p class="text-neutral-500 text-sm">welcome back,</p>
-                <h1 id="greeting-name" class="text-2xl font-bold tracking-tight">king</h1>
-            </div>
-            <div id="current-date" class="text-sm text-neutral-400 font-medium"></div>
-        </div>
-
-        <!-- TAB 1: HOME (METRICS & GOALS) -->
-        <div id="tab-home-content" class="tab-content space-y-6">
-            <!-- Mood Tracker -->
-            <div class="bg-neutral-900 p-4 rounded-2xl border border-neutral-800 space-y-3">
-                <p class="text-xs text-neutral-400 font-medium uppercase tracking-wider">how is your mood today?</p>
-                <div class="flex justify-between px-2 text-2xl">
-                    <button onclick="setMood(1)" class="mood-btn opacity-40 hover:opacity-100 transition">😢</button>
-                    <button onclick="setMood(2)" class="mood-btn opacity-40 hover:opacity-100 transition">😕</button>
-                    <button onclick="setMood(3)" class="mood-btn opacity-40 hover:opacity-100 transition">😐</button>
-                    <button onclick="setMood(4)" class="mood-btn opacity-40 hover:opacity-100 transition">🙂</button>
-                    <button onclick="setMood(5)" class="mood-btn opacity-40 hover:opacity-100 transition">⚡</button>
-                </div>
-            </div>
-
-            <!-- Health Sync Grid -->
-            <div class="grid grid-cols-2 gap-3">
-                <div class="bg-neutral-900 p-4 rounded-2xl border border-neutral-800">
-                    <p class="text-xs text-neutral-500">steps</p>
-                    <p id="home-steps" class="text-2xl font-bold mt-1">0</p>
-                    <div class="w-full bg-neutral-800 h-1 rounded-full mt-2 overflow-hidden">
-                        <div id="bar-steps" class="bg-white h-full transition-all" style="width: 0%"></div>
-                    </div>
-                </div>
-                <div class="bg-neutral-900 p-4 rounded-2xl border border-neutral-800">
-                    <p class="text-xs text-neutral-500">calories</p>
-                    <p id="home-calories" class="text-2xl font-bold mt-1">0 kcal</p>
-                </div>
-                <div class="bg-neutral-900 p-4 rounded-2xl border border-neutral-800">
-                    <p class="text-xs text-neutral-500">sleep</p>
-                    <p id="home-sleep" class="text-2xl font-bold mt-1">0h</p>
-                </div>
-                <div class="bg-neutral-900 p-4 rounded-2xl border border-neutral-800">
-                    <p class="text-xs text-neutral-500">water intake</p>
-                    <div class="flex items-center justify-between mt-1">
-                        <p id="home-water" class="text-2xl font-bold">0L</p>
-                        <button onclick="addWater()" class="bg-neutral-800 text-white rounded-lg px-2 py-1 text-xs font-semibold">+250ml</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Extra Health Metrics -->
-            <div class="bg-neutral-900 p-4 rounded-2xl border border-neutral-800 space-y-3">
-                <h3 class="text-sm font-semibold text-neutral-400">biometrics</h3>
-                <div class="grid grid-cols-3 gap-2 text-center">
-                    <div class="bg-neutral-950 p-2 rounded-xl border border-neutral-800">
-                        <p class="text-[10px] text-neutral-500">resting hr</p>
-                        <p id="bio-hr" class="text-sm font-bold mt-0.5">-- bpm</p>
-                    </div>
-                    <div class="bg-neutral-950 p-2 rounded-xl border border-neutral-800">
-                        <p class="text-[10px] text-neutral-500">hrv</p>
-                        <p id="bio-hrv" class="text-sm font-bold mt-0.5">-- ms</p>
-                    </div>
-                    <div class="bg-neutral-950 p-2 rounded-xl border border-neutral-800">
-                        <p class="text-[10px] text-neutral-500">weight</p>
-                        <p id="bio-weight" class="text-sm font-bold mt-0.5">-- kg</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Goals List -->
-            <div class="bg-neutral-900 p-4 rounded-2xl border border-neutral-800 space-y-3">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-sm font-semibold text-neutral-400">active goals</h3>
-                    <button onclick="showAddGoalModal()" class="text-xs text-neutral-400 hover:text-white">+ add goal</button>
-                </div>
-                <div id="goals-container" class="space-y-3"></div>
-            </div>
-        </div>
-
-        <!-- TAB 2: WORKOUT LOG -->
-        <div id="tab-workout-content" class="tab-content space-y-4 hidden">
-            <div class="bg-neutral-900 p-4 rounded-2xl border border-neutral-800 space-y-4">
-                <div class="flex justify-between items-center">
-                    <h2 class="text-lg font-bold">log workout</h2>
-                    <input id="workout-name" type="text" placeholder="e.g., push day" class="bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-1.5 text-sm focus:outline-none">
-                </div>
-                
-                <div id="exercise-inputs" class="space-y-3 border-t border-neutral-800 pt-3">
-                    <div class="grid grid-cols-4 gap-2">
-                        <input type="text" placeholder="exercise" class="col-span-2 bg-neutral-950 border border-neutral-800 rounded-lg p-2 text-xs text-white focus:outline-none" id="ex-name">
-                        <input type="number" placeholder="sets" class="bg-neutral-950 border border-neutral-800 rounded-lg p-2 text-xs text-white focus:outline-none" id="ex-sets">
-                        <input type="number" placeholder="reps" class="bg-neutral-950 border border-neutral-800 rounded-lg p-2 text-xs text-white focus:outline-none" id="ex-reps">
-                    </div>
-                    <div class="flex gap-2">
-                        <input type="number" placeholder="weight (kg)" class="flex-1 bg-neutral-950 border border-neutral-800 rounded-lg p-2 text-xs text-white focus:outline-none" id="ex-weight">
-                        <button onclick="addExerciseToTempList()" class="bg-white text-black px-4 rounded-lg text-xs font-bold">add ex</button>
-                    </div>
-                </div>
-
-                <div id="temp-exercise-list" class="space-y-1 text-xs text-neutral-400"></div>
-                <button onclick="saveFullWorkout()" class="w-full bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-white font-semibold py-2.5 rounded-xl text-sm transition">save workout session</button>
-            </div>
-
-            <div class="bg-neutral-900 p-4 rounded-2xl border border-neutral-800 space-y-3">
-                <h3 class="text-sm font-semibold text-neutral-400">history</h3>
-                <div id="workout-history" class="space-y-3 max-h-64 overflow-y-auto hide-scrollbar"></div>
-            </div>
-        </div>
-
-        <!-- TAB 3: HABITS TRACKER -->
-        <div id="tab-habits-content" class="tab-content space-y-4 hidden">
-            <div class="bg-neutral-900 p-4 rounded-2xl border border-neutral-800 space-y-4">
-                <div class="flex gap-2">
-                    <input id="habit-name-input" type="text" placeholder="new habit name..." class="flex-1 bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none">
-                    <button onclick="createHabit()" class="bg-white text-black px-4 rounded-xl text-sm font-semibold">create</button>
-                </div>
-                <div id="habits-list-container" class="space-y-4"></div>
-            </div>
-        </div>
-
-        <!-- TAB 4: TASKS (TO-DO) -->
-        <div id="tab-tasks-content" class="tab-content space-y-4 hidden">
-            <div class="bg-neutral-900 p-4 rounded-2xl border border-neutral-800 space-y-4">
-                <h2 class="text-lg font-bold tracking-tight">tasks list</h2>
-                <div class="flex gap-2">
-                    <input id="todo-input" type="text" placeholder="add a task..." class="flex-1 bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none">
-                    <button onclick="addTodo()" class="bg-white text-black px-4 rounded-xl text-sm font-semibold">add</button>
-                </div>
-                <ul id="todo-list" class="space-y-2 max-h-96 overflow-y-auto hide-scrollbar"></ul>
-            </div>
-        </div>
-
-        <!-- TAB 5: PROFILE -->
-        <div id="tab-profile-content" class="tab-content space-y-4 hidden">
-            <div class="bg-neutral-900 p-5 rounded-2xl border border-neutral-800 text-center space-y-4">
-                <div class="w-16 h-16 bg-neutral-800 border border-neutral-700 rounded-full mx-auto flex items-center justify-center text-xl font-bold">👑</div>
-                <div>
-                    <h2 id="profile-username-display" class="text-xl font-bold">king</h2>
-                    <p id="profile-email-display" class="text-xs text-neutral-500 mt-0.5"></p>
-                </div>
-                <button onclick="logout()" class="w-full bg-red-950/40 hover:bg-red-950/60 text-red-400 border border-red-900/50 rounded-xl py-2.5 text-sm font-medium transition">sign out</button>
-            </div>
-        </div>
-
+    <!-- SLEEP CHART -->
+    <div class="card">
+      <div class="card-title">Sleep — last 7 days</div>
+      <div class="sleep-chart" id="sleep-chart"></div>
     </div>
 
-    <!-- Bottom Navigation Bar -->
-    <div class="fixed bottom-0 left-0 right-0 border-t border-neutral-900 custom-blur z-30">
-        <div class="max-w-lg mx-auto flex justify-between items-center px-6 py-4 text-xs text-neutral-500">
-            <button onclick="switchTab('home')" id="nav-home" class="flex flex-col items-center gap-1 nav-active"><span>🏠</span><span>home</span></button>
-            <button onclick="switchTab('workout')" id="nav-workout" class="flex flex-col items-center gap-1"><span>💪</span><span>workout</span></button>
-            <button onclick="switchTab('habits')" id="nav-habits" class="flex flex-col items-center gap-1"><span>📅</span><span>habits</span></button>
-            <button onclick="switchTab('tasks')" id="nav-tasks" class="flex flex-col items-center gap-1"><span>⚡</span><span>tasks</span></button>
-            <button onclick="switchTab('profile')" id="nav-profile" class="flex flex-col items-center gap-1"><span>👤</span><span>profile</span></button>
-        </div>
+    <!-- QUICK TODOS -->
+    <div class="card">
+      <div class="card-title">To-do</div>
+      <div id="home-todos"></div>
+      <div style="text-align:center;margin-top:8px">
+        <span style="font-size:13px;color:var(--text3);cursor:pointer" onclick="switchPage('todos')">See all →</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- WORKOUT PAGE -->
+  <div class="page" id="page-workout">
+    <div class="section-title">Today's workout</div>
+    <div class="card" id="workout-card">
+      <div class="card-title" id="workout-name-display">No workout logged today</div>
+      <div id="exercises-list"></div>
+    </div>
+    <button class="btn-primary" onclick="openWorkoutModal()" style="margin-bottom:10px">+ Log workout</button>
+
+    <div class="section-title">Health metrics</div>
+    <div class="card">
+      <div class="row-item">
+        <div class="row-left">Weight</div>
+        <div class="row-right" id="hm-weight">—</div>
+      </div>
+      <div class="row-item">
+        <div class="row-left">Body fat</div>
+        <div class="row-right" id="hm-bf">—</div>
+      </div>
+      <div class="row-item">
+        <div class="row-left">Resting HR</div>
+        <div class="row-right" id="hm-hr">—</div>
+      </div>
+      <div class="row-item">
+        <div class="row-left">HRV</div>
+        <div class="row-right" id="hm-hrv">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HABITS PAGE -->
+  <div class="page" id="page-habits">
+    <div class="section-title">Habit tracker — <span id="habit-month"></span></div>
+    <div class="card">
+      <div id="habits-list"></div>
+      <div class="add-row">
+        <input class="add-input" type="text" id="habit-input" placeholder="New habit..." maxlength="30">
+        <button class="add-btn" onclick="addHabit()">Add</button>
+      </div>
     </div>
 
-    <!-- Script Application Logic -->
-    <script>
-        const SUPABASE_URL = "https://ylblkpjcihyhhdwvgigp.supabase.co";
-        const SUPABASE_ANON_KEY = "sb_publishable_ghk4UE0_C2yn4TQFYwIvmg_O-s3Ou13";
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    <div class="section-title">Goals</div>
+    <div class="card">
+      <div id="goals-list"></div>
+      <button class="btn-primary" style="margin-top:10px" onclick="openGoalModal()">+ Add goal</button>
+    </div>
+  </div>
 
-        let currentUser = null;
-        let temporaryExercises = [];
+  <!-- TODOS PAGE -->
+  <div class="page" id="page-todos">
+    <div class="section-title">To-do list</div>
+    <div class="card">
+      <div id="todos-list"></div>
+      <div class="add-row">
+        <input class="add-input" type="text" id="todo-input" placeholder="Add task..." maxlength="80">
+        <button class="add-btn" onclick="addTodo()">Add</button>
+      </div>
+    </div>
+  </div>
 
-        document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  <!-- PROFILE PAGE -->
+  <div class="page" id="page-profile">
+    <div style="padding:1.5rem 0 1rem">
+      <div class="profile-avatar" id="profile-avatar">?</div>
+      <div class="profile-name" id="profile-name">—</div>
+      <div class="profile-email" id="profile-email">—</div>
+    </div>
+    <div class="card">
+      <div class="row-item">
+        <div class="row-left">Change username</div>
+      </div>
+      <div class="add-row" style="margin-top:0">
+        <input class="add-input" type="text" id="new-username" placeholder="New username..." maxlength="24">
+        <button class="add-btn" onclick="changeUsername()">Save</button>
+      </div>
+    </div>
+    <button class="btn-danger" onclick="logout()">Logout</button>
+  </div>
 
-        supabase.auth.onAuthStateChange((event, session) => {
-            if (session) {
-                currentUser = session.user;
-                document.getElementById('auth-screen').classList.add('hidden');
-                document.getElementById('profile-email-display').innerText = currentUser.email;
-                checkProfile();
-            } else {
-                currentUser = null;
-                document.getElementById('app-screen').classList.add('hidden');
-                document.getElementById('auth-screen').classList.remove('hidden');
-            }
-        });
+  <!-- NAV -->
+  <nav class="nav-bar">
+    <div class="nav-item active" onclick="switchPage('home')" id="nav-home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
+      <span>Home</span>
+    </div>
+    <div class="nav-item" onclick="switchPage('workout')" id="nav-workout">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 4v16M18 4v16M2 8h4M18 8h4M2 16h4M18 16h4"/></svg>
+      <span>Workout</span>
+    </div>
+    <div class="nav-item" onclick="switchPage('habits')" id="nav-habits">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-5"/></svg>
+      <span>Habits</span>
+    </div>
+    <div class="nav-item" onclick="switchPage('todos')" id="nav-todos">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
+      <span>Tasks</span>
+    </div>
+    <div class="nav-item" onclick="switchPage('profile')" id="nav-profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      <span>Profile</span>
+    </div>
+  </nav>
+</div>
 
-        async function handleAuth(type) {
-            const email = document.getElementById('auth-email').value;
-            const password = document.getElementById('auth-password').value;
-            const errEl = document.getElementById('auth-error');
-            errEl.classList.add('hidden');
+<!-- LOG MODAL -->
+<div class="modal-overlay" id="log-modal">
+  <div class="modal">
+    <div class="modal-title">Log today</div>
+    <div class="log-grid">
+      <div class="log-field"><label>Steps</label><input type="number" id="l-steps" placeholder="8000"></div>
+      <div class="log-field"><label>Sleep (h)</label><input type="number" id="l-sleep" placeholder="7.5" step="0.5"></div>
+      <div class="log-field"><label>Calories</label><input type="number" id="l-cal" placeholder="2000"></div>
+      <div class="log-field"><label>Water (L)</label><input type="number" id="l-water" placeholder="2.5" step="0.1"></div>
+      <div class="log-field"><label>Weight (kg)</label><input type="number" id="l-weight" placeholder="78.5" step="0.1"></div>
+      <div class="log-field"><label>Body fat (%)</label><input type="number" id="l-bf" placeholder="16" step="0.1"></div>
+      <div class="log-field"><label>Resting HR</label><input type="number" id="l-hr" placeholder="62"></div>
+      <div class="log-field"><label>HRV (ms)</label><input type="number" id="l-hrv" placeholder="52"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('log-modal')">Cancel</button>
+      <button class="btn-save" onclick="saveMetrics()">Save</button>
+    </div>
+  </div>
+</div>
 
-            if (!email || !password) return;
+<!-- WORKOUT MODAL -->
+<div class="modal-overlay" id="workout-modal">
+  <div class="modal">
+    <div class="modal-title">Log workout</div>
+    <div class="field"><label>Workout name</label><input type="text" id="w-name" placeholder="Push Day, Legs, etc."></div>
+    <div id="exercises-form"></div>
+    <button class="btn-cancel" style="width:100%;margin-bottom:8px" onclick="addExerciseField()">+ Add exercise</button>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('workout-modal')">Cancel</button>
+      <button class="btn-save" onclick="saveWorkout()">Save</button>
+    </div>
+  </div>
+</div>
 
-            const { data, error } = type === 'signin' 
-                ? await supabase.auth.signInWithPassword({ email, password })
-                : await supabase.auth.signUp({ email, password });
+<!-- GOAL MODAL -->
+<div class="modal-overlay" id="goal-modal">
+  <div class="modal">
+    <div class="modal-title">Add goal</div>
+    <div class="field"><label>Goal name</label><input type="text" id="g-name" placeholder="e.g. Bench 100kg"></div>
+    <div class="log-grid">
+      <div class="log-field"><label>Current</label><input type="number" id="g-current" placeholder="80"></div>
+      <div class="log-field"><label>Target</label><input type="number" id="g-target" placeholder="100"></div>
+      <div class="log-field full"><label>Unit</label><input type="text" id="g-unit" placeholder="kg, km, books..."></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('goal-modal')">Cancel</button>
+      <button class="btn-save" onclick="saveGoal()">Save</button>
+    </div>
+  </div>
+</div>
 
-            if (error) {
-                errEl.innerText = error.message;
-                errEl.classList.remove('hidden');
-            }
-        }
+<div class="toast" id="toast"></div>
 
-        async function checkProfile() {
-            const { data, error } = await supabase.from('profiles').select('username').eq('id', currentUser.id).maybeSingle();
-            if (error || !data) {
-                document.getElementById('username-screen').classList.remove('hidden');
-            } else {
-                document.getElementById('username-screen').classList.add('hidden');
-                document.getElementById('greeting-name').innerText = data.username;
-                document.getElementById('profile-username-display').innerText = data.username;
-                document.getElementById('app-screen').classList.remove('hidden');
-                loadAllData();
-            }
-        }
+<script>
+const SUPABASE_URL = 'https://ylblkpjcihyhhdwvgigp.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_ghk4UE0_C2yn4TQFYwIvmg_O-s3Ou13';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        async function saveUsername() {
-            const username = document.getElementById('username-input').value.trim();
-            if (!username) return;
-            const { error } = await supabase.from('profiles').insert({ id: currentUser.id, username: username });
-            if (!error) checkProfile();
-        }
+let currentUser = null;
+let userProfile = null;
+let todayMetrics = null;
+let allTodos = [];
+let allHabits = [];
+let allHabitLogs = [];
+let allGoals = [];
+let todayWorkout = null;
+let todayExercises = [];
+let currentMood = null;
+const today = new Date().toISOString().split('T')[0];
 
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.fixed bottom-0 button').forEach(el => el.classList.remove('nav-active'));
-            
-            document.getElementById(`tab-${tabId}-content`).classList.remove('hidden');
-            
-            const navIds = ['home', 'workout', 'habits', 'tasks', 'profile'];
-            navIds.forEach(id => {
-                const el = document.getElementById(`nav-${id}`);
-                if (id === tabId) el.classList.add('nav-active');
-                else el.classList.remove('nav-active');
-            });
-        }
+// INIT
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  document.getElementById('loading').style.display = 'none';
+  if (session) {
+    currentUser = session.user;
+    await loadProfile();
+  } else {
+    document.getElementById('auth-screen').style.display = 'flex';
+  }
+}
 
-        function loadAllData() {
-            loadMetrics();
-            loadGoals();
-            loadWorkouts();
-            loadHabits();
-            loadTodos();
-        }
+async function loadProfile() {
+  const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+  if (!data) {
+    document.getElementById('onboard-screen').style.display = 'flex';
+    return;
+  }
+  userProfile = data;
+  showApp();
+}
 
-        async function loadMetrics() {
-            const today = new Date().toISOString().split('T')[0];
-            const { data } = await supabase.from('health_metrics').select('*').eq('user_id', currentUser.id).eq('date', today).maybeSingle();
-            
-            if (data) {
-                document.getElementById('home-steps').innerText = (data.steps || 0).toLocaleString();
-                document.getElementById('home-calories').innerText = `${data.calories || 0} kcal`;
-                document.getElementById('home-sleep').innerText = `${data.sleep_hours || 0}h`;
-                document.getElementById('home-water').innerText = `${data.water_liters || 0}L`;
-                document.getElementById('bio-hr').innerText = data.resting_hr ? `${data.resting_hr} bpm` : '-- bpm';
-                document.getElementById('bio-hrv').innerText = data.hrv ? `${data.hrv} ms` : '-- ms';
-                document.getElementById('bio-weight').innerText = data.weight ? `${data.weight} kg` : '-- kg';
+async function showApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('onboard-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  setGreeting();
+  await Promise.all([loadMetrics(), loadTodos(), loadHabits(), loadGoals(), loadWorkout()]);
+}
 
-                const stepPercent = Math.min(((data.steps || 0) / 10000) * 100, 100);
-                document.getElementById('bar-steps').style.width = `${stepPercent}%`;
+function setGreeting() {
+  const h = new Date().getHours();
+  const greet = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('greeting').textContent = `${greet}, ${userProfile.username} 👋`;
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const now = new Date();
+  document.getElementById('greeting-sub').textContent = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+}
 
-                if (data.mood) {
-                    document.querySelectorAll('.mood-btn').forEach((btn, idx) => {
-                        if (idx + 1 === data.mood) btn.style.opacity = '1';
-                        else btn.style.opacity = '0.4';
-                    });
-                }
-            }
-        }
+// AUTH
+function switchTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='signup')));
+  document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('signup-form').style.display = tab === 'signup' ? 'block' : 'none';
+  document.getElementById('auth-error').textContent = '';
+}
 
-        async function setMood(val) {
-            const today = new Date().toISOString().split('T')[0];
-            await supabase.from('health_metrics').upsert({ user_id: currentUser.id, date: today, mood: val }, { onConflict: 'user_id,date' });
-            loadMetrics();
-        }
+async function login() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  if (!email || !pass) return;
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if (error) { document.getElementById('auth-error').textContent = error.message; return; }
+  currentUser = data.user;
+  await loadProfile();
+}
 
-        async function addWater() {
-            const today = new Date().toISOString().split('T')[0];
-            const { data } = await supabase.from('health_metrics').select('water_liters').eq('user_id', currentUser.id).eq('date', today).maybeSingle();
-            const currentWater = data ? (data.water_liters || 0) : 0;
-            await supabase.from('health_metrics').upsert({ user_id: currentUser.id, date: today, water_liters: currentWater + 0.25 }, { onConflict: 'user_id,date' });
-            loadMetrics();
-        }
+async function signup() {
+  const email = document.getElementById('signup-email').value.trim();
+  const pass = document.getElementById('signup-pass').value;
+  if (!email || !pass) return;
+  const { data, error } = await sb.auth.signUp({ email, password: pass });
+  if (error) { document.getElementById('auth-error').textContent = error.message; return; }
+  currentUser = data.user;
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('onboard-screen').style.display = 'flex';
+}
 
-        async function loadGoals() {
-            const { data } = await supabase.from('goals').select('*').eq('user_id', currentUser.id);
-            const container = document.getElementById('goals-container');
-            container.innerHTML = '';
-            if (data) {
-                data.forEach(g => {
-                    const pct = Math.min((g.current_value / g.target_value) * 100, 100);
-                    container.innerHTML += `
-                        <div>
-                            <div class="flex justify-between text-xs mb-1">
-                                <span>${g.name}</span>
-                                <span class="text-neutral-400">${g.current_value}/${g.target_value} ${g.unit || ''}</span>
-                            </div>
-                            <div class="w-full bg-neutral-950 h-1.5 rounded-full overflow-hidden border border-neutral-800">
-                                <div class="bg-white h-full" style="width: ${pct}%"></div>
-                            </div>
-                        </div>`;
-                });
-            }
-        }
+async function saveUsername() {
+  const username = document.getElementById('onboard-username').value.trim();
+  if (!username) { document.getElementById('onboard-error').textContent = 'Enter a username'; return; }
+  const { error } = await sb.from('profiles').insert({ id: currentUser.id, username });
+  if (error) { document.getElementById('onboard-error').textContent = error.message; return; }
+  userProfile = { id: currentUser.id, username };
+  showApp();
+}
 
-        function showAddGoalModal() {
-            const name = prompt("goal name:");
-            const target = prompt("target value:");
-            const unit = prompt("unit (e.g. kg, reps):");
-            if (name && target) {
-                supabase.from('goals').insert({ user_id: currentUser.id, name, target_value: parseFloat(target), unit, current_value: 0 }).then(() => loadGoals());
-            }
-        }
+async function logout() {
+  await sb.auth.signOut();
+  location.reload();
+}
 
-        function addExerciseToTempList() {
-            const name = document.getElementById('ex-name').value;
-            const sets = document.getElementById('ex-sets').value;
-            const reps = document.getElementById('ex-reps').value;
-            const weight = document.getElementById('ex-weight').value;
+async function changeUsername() {
+  const username = document.getElementById('new-username').value.trim();
+  if (!username) return;
+  await sb.from('profiles').update({ username }).eq('id', currentUser.id);
+  userProfile.username = username;
+  setGreeting();
+  document.getElementById('profile-name').textContent = username;
+  document.getElementById('profile-avatar').textContent = username[0].toUpperCase();
+  document.getElementById('new-username').value = '';
+  toast('Username updated');
+}
 
-            if (!name) return;
-            temporaryExercises.push({ name, sets: parseInt(sets), reps: parseInt(reps), weight: parseFloat(weight) });
-            
-            document.getElementById('temp-exercise-list').innerHTML = temporaryExercises.map(e => `<div>• ${e.name} - ${e.sets}x${e.reps} @ ${e.weight || 0}kg</div>`).join('');
-            document.getElementById('ex-name').value = '';
-            document.getElementById('ex-sets').value = '';
-            document.getElementById('ex-reps').value = '';
-            document.getElementById('ex-weight').value = '';
-        }
+// NAVIGATION
+function switchPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(`page-${name}`).classList.add('active');
+  document.getElementById(`nav-${name}`).classList.add('active');
+  if (name === 'profile') renderProfile();
+  if (name === 'habits') renderHabitMonth();
+}
 
-        async function saveFullWorkout() {
-            const wName = document.getElementById('workout-name').value || "workout session";
-            if (temporaryExercises.length === 0) return;
+// METRICS
+async function loadMetrics() {
+  const { data } = await sb.from('health_metrics').select('*').eq('user_id', currentUser.id).eq('date', today).single();
+  todayMetrics = data;
+  renderMetrics();
+  await loadSleepChart();
+}
 
-            const today = new Date().toISOString().split('T')[0];
-            const { data: wData } = await supabase.from('workouts').insert({ user_id: currentUser.id, name: wName, date: today }).select().single();
+function renderMetrics() {
+  const m = todayMetrics;
+  document.getElementById('m-steps').textContent = m?.steps ? m.steps.toLocaleString() : '—';
+  document.getElementById('m-sleep').innerHTML = m?.sleep_hours ? `${m.sleep_hours}<span class="card-unit">h</span>` : '—';
+  document.getElementById('m-cal').textContent = m?.calories ? m.calories.toLocaleString() : '—';
+  document.getElementById('m-water').innerHTML = m?.water_liters ? `${m.water_liters}<span class="card-unit">L</span>` : '—';
+  document.getElementById('p-steps').style.width = m?.steps ? Math.min(100, Math.round(m.steps/100)) + '%' : '0%';
+  document.getElementById('p-cal').style.width = m?.calories ? Math.min(100, Math.round(m.calories/25)) + '%' : '0%';
+  document.getElementById('p-water').style.width = m?.water_liters ? Math.min(100, Math.round(m.water_liters/3*100)) + '%' : '0%';
+  document.getElementById('hm-weight').textContent = m?.weight ? `${m.weight} kg` : '—';
+  document.getElementById('hm-bf').textContent = m?.body_fat ? `${m.body_fat}%` : '—';
+  document.getElementById('hm-hr').textContent = m?.resting_hr ? `${m.resting_hr} bpm` : '—';
+  document.getElementById('hm-hrv').textContent = m?.hrv ? `${m.hrv} ms` : '—';
+  if (m?.mood) {
+    currentMood = m.mood;
+    document.querySelectorAll('.mood-btn').forEach((btn, i) => btn.classList.toggle('selected', i+1 === m.mood));
+  }
+  if (m) {
+    document.getElementById('l-steps').value = m.steps || '';
+    document.getElementById('l-sleep').value = m.sleep_hours || '';
+    document.getElementById('l-cal').value = m.calories || '';
+    document.getElementById('l-water').value = m.water_liters || '';
+    document.getElementById('l-weight').value = m.weight || '';
+    document.getElementById('l-bf').value = m.body_fat || '';
+    document.getElementById('l-hr').value = m.resting_hr || '';
+    document.getElementById('l-hrv').value = m.hrv || '';
+  }
+}
 
-            if (wData) {
-                const prepared = temporaryExercises.map(e => ({ workout_id: wData.id, name: e.name, sets: e.sets, reps: e.reps, weight: e.weight }));
-                await supabase.from('workout_exercises').insert(prepared);
-                temporaryExercises = [];
-                document.getElementById('temp-exercise-list').innerHTML = '';
-                document.getElementById('workout-name').value = '';
-                loadWorkouts();
-            }
-        }
+async function loadSleepChart() {
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    days.push(d.toISOString().split('T')[0]);
+  }
+  const { data } = await sb.from('health_metrics').select('date,sleep_hours').eq('user_id', currentUser.id).in('date', days);
+  const map = {};
+  (data||[]).forEach(r => map[r.date] = r.sleep_hours);
+  const max = Math.max(...Object.values(map), 8);
+  const labels = ['M','T','W','T','F','S','S'];
+  const chart = document.getElementById('sleep-chart');
+  chart.innerHTML = '';
+  days.forEach((d, i) => {
+    const h = map[d] || 0;
+    const pct = h ? Math.max(8, Math.round(h/max*100)) : 8;
+    chart.innerHTML += `<div class="sleep-bar-wrap"><div class="sleep-bar" style="height:${pct}%;opacity:${h?0.4+h/max*0.6:0.15}" title="${h?h+'h':'—'}"></div><div class="sleep-day">${labels[i]}</div></div>`;
+  });
+}
 
-        async function loadWorkouts() {
-            const { data: wData } = await supabase.from('workouts').select('*, workout_exercises(*)').eq('user_id', currentUser.id).order('date', { ascending: false });
-            const container = document.getElementById('workout-history');
-            container.innerHTML = '';
-            if (wData) {
-                wData.forEach(w => {
-                    const exHtml = w.workout_exercises.map(e => `<div class="text-xs text-neutral-400">${e.name} : ${e.sets || 0}x${e.reps || 0} (${e.weight || 0} kg)</div>`).join('');
-                    container.innerHTML += `
-                        <div class="bg-neutral-950 p-3 rounded-xl border border-neutral-800 space-y-1">
-                            <div class="flex justify-between items-center text-xs font-semibold">
-                                <span>${w.name}</span>
-                                <span class="text-neutral-500">${w.date}</span>
-                            </div>
-                            <div class="space-y-0.5 border-t border-neutral-900 pt-1 mt-1">${exHtml}</div>
-                        </div>`;
-                });
-            }
-        }
+function openLogModal() { document.getElementById('log-modal').classList.add('open'); }
 
-        async function createHabit() {
-            const input = document.getElementById('habit-name-input');
-            const name = input.value.trim();
-            if (!name) return;
-            await supabase.from('habits').insert({ user_id: currentUser.id, name });
-            input.value = '';
-            loadHabits();
-        }
+async function saveMetrics() {
+  const payload = {
+    user_id: currentUser.id, date: today,
+    steps: parseInt(document.getElementById('l-steps').value) || null,
+    sleep_hours: parseFloat(document.getElementById('l-sleep').value) || null,
+    calories: parseInt(document.getElementById('l-cal').value) || null,
+    water_liters: parseFloat(document.getElementById('l-water').value) || null,
+    weight: parseFloat(document.getElementById('l-weight').value) || null,
+    body_fat: parseFloat(document.getElementById('l-bf').value) || null,
+    resting_hr: parseInt(document.getElementById('l-hr').value) || null,
+    hrv: parseInt(document.getElementById('l-hrv').value) || null,
+    mood: currentMood
+  };
+  const { data, error } = await sb.from('health_metrics').upsert(payload, { onConflict: 'user_id,date' }).select().single();
+  if (!error) { todayMetrics = data; renderMetrics(); closeModal('log-modal'); toast('Logged ✓'); await loadSleepChart(); }
+}
 
-        async function loadHabits() {
-            const { data: habits } = await supabase.from('habits').select('*, habit_logs(*)').eq('user_id', currentUser.id);
-            const container = document.getElementById('habits-list-container');
-            container.innerHTML = '';
-            
-            if (habits) {
-                const todayStr = new Date().toISOString().split('T')[0];
-                habits.forEach(h => {
-                    const isDoneToday = h.habit_logs.some(l => l.date === todayStr && l.done);
-                    container.innerHTML += `
-                        <div class="bg-neutral-950 p-3 rounded-xl border border-neutral-800 flex justify-between items-center">
-                            <div>
-                                <p class="text-sm font-semibold">${h.name}</p>
-                                <p class="text-[10px] text-neutral-500">streak sync active</p>
-                            </div>
-                            <button onclick="toggleHabitLog('${h.id}', ${isDoneToday})" class="px-4 py-1.5 rounded-lg text-xs font-bold ${isDoneToday ? 'bg-neutral-800 text-neutral-400' : 'bg-white text-black'}">
-                                ${isDoneToday ? 'completed' : 'mark done'}
-                            </button>
-                        </div>`;
-                });
-            }
-        }
+async function setMood(val) {
+  currentMood = val;
+  document.querySelectorAll('.mood-btn').forEach((btn, i) => btn.classList.toggle('selected', i+1 === val));
+  const payload = { user_id: currentUser.id, date: today, mood: val };
+  await sb.from('health_metrics').upsert(payload, { onConflict: 'user_id,date' });
+}
 
-        async function toggleHabitLog(habitId, isDone) {
-            const today = new Date().toISOString().split('T')[0];
-            if (isDone) {
-                await supabase.from('habit_logs').delete().eq('habit_id', habitId).eq('date', today);
-            } else {
-                await supabase.from('habit_logs').insert({ habit_id: habitId, user_id: currentUser.id, date: today, done: true });
-            }
-            loadHabits();
-        }
+// TODOS
+async function loadTodos() {
+  const { data } = await sb.from('todos').select('*').eq('user_id', currentUser.id).order('created_at');
+  allTodos = data || [];
+  renderTodos();
+}
 
-        async function loadTodos() {
-            const { data } = await supabase.from('todos').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: true });
-            const listEl = document.getElementById('todo-list');
-            listEl.innerHTML = '';
-            if (data) {
-                data.forEach(todo => {
-                    const li = document.createElement('li');
-                    li.className = "flex items-center justify-between bg-neutral-950 px-4 py-3 rounded-xl border border-neutral-800 text-sm";
-                    li.innerHTML = `
-                        <div class="flex items-center gap-3">
-                            <input type="checkbox" ${todo.done ? 'checked' : ''} onclick="toggleTodo('${todo.id}', ${todo.done})" class="accent-white">
-                            <span class="${todo.done ? 'line-through text-neutral-500' : ''}">${todo.text}</span>
-                        </div>
-                        <button onclick="deleteTodo('${todo.id}')" class="text-neutral-500 hover:text-red-400">delete</button>
-                    `;
-                    listEl.appendChild(li);
-                });
-            }
-        }
+function renderTodos() {
+  const list = document.getElementById('todos-list');
+  const home = document.getElementById('home-todos');
+  list.innerHTML = '';
+  home.innerHTML = '';
+  const shown = allTodos.slice(0, 4);
+  allTodos.forEach(t => list.appendChild(makeTodoEl(t)));
+  shown.forEach(t => home.appendChild(makeTodoEl(t, true)));
+}
 
-        async function addTodo() {
-            const input = document.getElementById('todo-input');
-            const text = input.value.trim();
-            if (!text) return;
-            await supabase.from('todos').insert({ user_id: currentUser.id, text });
-            input.value = '';
-            loadTodos();
-        }
+function makeTodoEl(t, mini) {
+  const el = document.createElement('div');
+  el.className = 'todo-item';
+  el.innerHTML = `
+    <div class="todo-check ${t.done?'done':''}" onclick="toggleTodo('${t.id}',${t.done})">
+      <svg viewBox="0 0 12 12" fill="none" stroke="#0f0f0f" stroke-width="2"><polyline points="1.5,6 4.5,9 10.5,3"/></svg>
+    </div>
+    <div class="todo-text ${t.done?'done':''}">${t.text}</div>
+    ${!mini ? `<div class="todo-delete" onclick="deleteTodo('${t.id}')">✕</div>` : ''}
+  `;
+  return el;
+}
 
-        async function toggleTodo(id, done) {
-            await supabase.from('todos').update({ done: !done }).eq('id', id);
-            loadTodos();
-        }
+async function addTodo() {
+  const input = document.getElementById('todo-input');
+  const text = input.value.trim();
+  if (!text) return;
+  const { data } = await sb.from('todos').insert({ user_id: currentUser.id, text }).select().single();
+  allTodos.push(data);
+  input.value = '';
+  renderTodos();
+}
 
-        async function deleteTodo(id) {
-            await supabase.from('todos').delete().eq('id', id);
-            loadTodos();
-        }
+async function toggleTodo(id, done) {
+  await sb.from('todos').update({ done: !done }).eq('id', id);
+  const t = allTodos.find(t => t.id === id);
+  if (t) t.done = !done;
+  renderTodos();
+}
 
-        async function logout() {
-            await supabase.auth.signOut();
-        }
-    </script>
+async function deleteTodo(id) {
+  await sb.from('todos').delete().eq('id', id);
+  allTodos = allTodos.filter(t => t.id !== id);
+  renderTodos();
+}
+
+// HABITS
+async function loadHabits() {
+  const { data: habits } = await sb.from('habits').select('*').eq('user_id', currentUser.id).order('created_at');
+  allHabits = habits || [];
+  const start = new Date(); start.setDate(1);
+  const dates = [];
+  for (let d = new Date(start); d <= new Date(); d.setDate(d.getDate()+1)) dates.push(d.toISOString().split('T')[0]);
+  if (dates.length > 0) {
+    const { data: logs } = await sb.from('habit_logs').select('*').eq('user_id', currentUser.id).in('date', dates);
+    allHabitLogs = logs || [];
+  }
+  renderHabits();
+  renderHabitMonth();
+}
+
+function renderHabitMonth() {
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const el = document.getElementById('habit-month');
+  if (el) el.textContent = months[new Date().getMonth()];
+}
+
+function renderHabits() {
+  const list = document.getElementById('habits-list');
+  if (!list) return;
+  list.innerHTML = '';
+  const now = new Date();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+  const daysDone = Math.min(now.getDate(), daysInMonth);
+  allHabits.forEach(h => {
+    const row = document.createElement('div');
+    row.className = 'habit-row';
+    const dots = Array.from({length: daysDone}, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth(), i+1).toISOString().split('T')[0];
+      const done = allHabitLogs.some(l => l.habit_id === h.id && l.date === d);
+      return `<div class="habit-dot ${done?'done':''}" onclick="toggleHabit('${h.id}','${d}',${done})" title="${d}"></div>`;
+    }).join('');
+    row.innerHTML = `<div class="habit-name" title="${h.name}">${h.name}</div><div class="habit-dots">${dots}</div><div class="habit-delete" onclick="deleteHabit('${h.id}')">✕</div>`;
+    list.appendChild(row);
+  });
+}
+
+async function addHabit() {
+  const input = document.getElementById('habit-input');
+  const name = input.value.trim();
+  if (!name) return;
+  const { data } = await sb.from('habits').insert({ user_id: currentUser.id, name }).select().single();
+  allHabits.push(data);
+  input.value = '';
+  renderHabits();
+}
+
+async function toggleHabit(habitId, date, done) {
+  if (done) {
+    await sb.from('habit_logs').delete().eq('habit_id', habitId).eq('date', date);
+    allHabitLogs = allHabitLogs.filter(l => !(l.habit_id === habitId && l.date === date));
+  } else {
+    const { data } = await sb.from('habit_logs').insert({ habit_id: habitId, user_id: currentUser.id, date }).select().single();
+    if (data) allHabitLogs.push(data);
+  }
+  renderHabits();
+}
+
+async function deleteHabit(id) {
+  await sb.from('habits').delete().eq('id', id);
+  allHabits = allHabits.filter(h => h.id !== id);
+  renderHabits();
+}
+
+// GOALS
+async function loadGoals() {
+  const { data } = await sb.from('goals').select('*').eq('user_id', currentUser.id).order('created_at');
+  allGoals = data || [];
+  renderGoals();
+}
+
+function renderGoals() {
+  const list = document.getElementById('goals-list');
+  if (!list) return;
+  list.innerHTML = '';
+  if (!allGoals.length) { list.innerHTML = '<div style="color:var(--text3);font-size:14px;text-align:center;padding:1rem">No goals yet</div>'; return; }
+  allGoals.forEach(g => {
+    const pct = Math.min(100, Math.round(g.current_value / g.target_value * 100));
+    const color = pct >= 80 ? 'var(--accent)' : pct >= 50 ? 'var(--amber)' : 'var(--blue)';
+    const el = document.createElement('div');
+    el.className = 'goal-item';
+    el.innerHTML = `
+      <div class="goal-top">
+        <div class="goal-name">${g.name}</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="goal-pct">${pct}%</div>
+          <div style="color:var(--text3);cursor:pointer;font-size:14px" onclick="deleteGoal('${g.id}')">✕</div>
+        </div>
+      </div>
+      <div class="progress-bg"><div class="progress-fill" style="background:${color};width:${pct}%"></div></div>
+      <div class="goal-vals">${g.current_value} / ${g.target_value} ${g.unit||''}</div>
+    `;
+    list.appendChild(el);
+  });
+}
+
+function openGoalModal() { document.getElementById('goal-modal').classList.add('open'); }
+
+async function saveGoal() {
+  const name = document.getElementById('g-name').value.trim();
+  const current = parseFloat(document.getElementById('g-current').value) || 0;
+  const target = parseFloat(document.getElementById('g-target').value);
+  const unit = document.getElementById('g-unit').value.trim();
+  if (!name || !target) return;
+  const { data } = await sb.from('goals').insert({ user_id: currentUser.id, name, current_value: current, target_value: target, unit }).select().single();
+  allGoals.push(data);
+  closeModal('goal-modal');
+  document.getElementById('g-name').value = '';
+  document.getElementById('g-current').value = '';
+  document.getElementById('g-target').value = '';
+  document.getElementById('g-unit').value = '';
+  renderGoals();
+  toast('Goal added');
+}
+
+async function deleteGoal(id) {
+  await sb.from('goals').delete().eq('id', id);
+  allGoals = allGoals.filter(g => g.id !== id);
+  renderGoals();
+}
+
+// WORKOUT
+async function loadWorkout() {
+  const { data } = await sb.from('workouts').select('*').eq('user_id', currentUser.id).eq('date', today).single();
+  if (data) {
+    todayWorkout = data;
+    const { data: exs } = await sb.from('workout_exercises').select('*').eq('workout_id', data.id);
+    todayExercises = exs || [];
+  }
+  renderWorkout();
+}
+
+function renderWorkout() {
+  document.getElementById('workout-name-display').textContent = todayWorkout ? todayWorkout.name : 'No workout logged today';
+  const list = document.getElementById('exercises-list');
+  list.innerHTML = '';
+  todayExercises.forEach(e => {
+    list.innerHTML += `<div class="exercise-item"><span class="exercise-name">${e.name}</span><span class="exercise-detail">${e.sets}×${e.reps}${e.weight?' — '+e.weight+'kg':''}</span></div>`;
+  });
+}
+
+function openWorkoutModal() {
+  document.getElementById('exercises-form').innerHTML = '';
+  document.getElementById('w-name').value = todayWorkout?.name || '';
+  addExerciseField();
+  document.getElementById('workout-modal').classList.add('open');
+}
+
+function addExerciseField() {
+  const form = document.getElementById('exercises-form');
+  const idx = form.children.length;
+  const div = document.createElement('div');
+  div.style.cssText = 'display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:6px;margin-bottom:8px;align-items:end';
+  div.innerHTML = `
+    <div class="log-field" style="margin:0"><label>${idx===0?'Exercise':''}</label><input type="text" class="ex-name" placeholder="Bench Press"></div>
+    <div class="log-field" style="margin:0"><label>${idx===0?'Sets':''}</label><input type="number" class="ex-sets" placeholder="4"></div>
+    <div class="log-field" style="margin:0"><label>${idx===0?'Reps':''}</label><input type="number" class="ex-reps" placeholder="8"></div>
+    <div class="log-field" style="margin:0"><label>${idx===0?'kg':''}</label><input type="number" class="ex-weight" placeholder="80"></div>
+  `;
+  form.appendChild(div);
+}
+
+async function saveWorkout() {
+  const name = document.getElementById('w-name').value.trim();
+  if (!name) return;
+  if (todayWorkout) await sb.from('workouts').delete().eq('id', todayWorkout.id);
+  const { data: w } = await sb.from('workouts').insert({ user_id: currentUser.id, date: today, name }).select().single();
+  todayWorkout = w;
+  const exercises = [];
+  document.querySelectorAll('#exercises-form > div').forEach(row => {
+    const n = row.querySelector('.ex-name').value.trim();
+    if (!n) return;
+    exercises.push({ workout_id: w.id, name: n, sets: parseInt(row.querySelector('.ex-sets').value)||null, reps: parseInt(row.querySelector('.ex-reps').value)||null, weight: parseFloat(row.querySelector('.ex-weight').value)||null });
+  });
+  if (exercises.length) {
+    const { data: exs } = await sb.from('workout_exercises').insert(exercises).select();
+    todayExercises = exs || [];
+  } else { todayExercises = []; }
+  closeModal('workout-modal');
+  renderWorkout();
+  toast('Workout saved');
+}
+
+// PROFILE
+function renderProfile() {
+  const u = userProfile;
+  document.getElementById('profile-avatar').textContent = u.username[0].toUpperCase();
+  document.getElementById('profile-name').textContent = u.username;
+  document.getElementById('profile-email').textContent = currentUser.email;
+}
+
+// MODAL / TOAST
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }));
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ENTER key for inputs
+document.getElementById('todo-input').addEventListener('keydown', e => { if (e.key === 'Enter') addTodo(); });
+document.getElementById('habit-input').addEventListener('keydown', e => { if (e.key === 'Enter') addHabit(); });
+
+init();
+</script>
 </body>
 </html>
